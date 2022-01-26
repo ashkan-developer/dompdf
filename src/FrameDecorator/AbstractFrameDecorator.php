@@ -339,6 +339,38 @@ abstract class AbstractFrameDecorator extends Frame
         return $this->_frame->get_border_box();
     }
 
+    /**
+     * Return the height of the baseline for the object
+     *
+     * @return float
+     */
+    public function get_baseline()
+    {
+        $style = $this->_frame->get_style();
+        $baseline = $this->_dompdf->getCanvas()->get_font_baseline($style->font_family, $style->font_size);
+
+        $isInlineBlock = $style->display !== "inline"
+        && $style->display !== "-dompdf-list-bullet";
+
+        if ($this instanceof \Dompdf\FrameDecorator\Image) {
+            $baseline = $style->length_in_pt([
+                $this->_frame->get_border_box()['h'],
+                $style->margin_top
+            ]);
+        } else if ($isInlineBlock) {
+            foreach ($this->get_children() as $child) {
+                $child_baseline = $child->get_baseline();
+                if ($child_baseline > $baseline) {
+                    $baseline = $child_baseline;
+                }
+            }
+            $baseline += $style->length_in_pt([$style->margin_top]);
+        }
+
+        return $baseline;
+    }
+
+
     function set_id($id)
     {
         $this->_frame->set_id($id);
